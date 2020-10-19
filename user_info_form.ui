@@ -1,0 +1,386 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>480</width>
+    <height>677</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Выбор времени</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <widget class="QLabel" name="label">
+    <property name="geometry">
+     <rect>
+      <x>100</x>
+      <y>0</y>
+      <width>111</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Source Sans Pro Semibold</family>
+      <pointsize>11</pointsize>
+      <weight>75</weight>
+      <italic>true</italic>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="text">
+     <string>Выберите дату</string>
+    </property>
+   </widget>
+   <widget class="QCalendarWidget" name="calendar">
+    <property name="geometry">
+     <rect>
+      <x>100</x>
+      <y>30</y>
+      <width>331</width>
+      <height>201</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_2">
+    <property name="geometry">
+     <rect>
+      <x>40</x>
+      <y>300</y>
+      <width>121</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Source Sans Pro Semibold</family>
+      <pointsize>11</pointsize>
+      <weight>75</weight>
+      <italic>true</italic>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="text">
+     <string>Выберите время</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_3">
+    <property name="geometry">
+     <rect>
+      <x>40</x>
+      <y>400</y>
+      <width>131</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Source Sans Pro Semibold</family>
+      <pointsize>10</pointsize>
+      <weight>75</weight>
+      <italic>true</italic>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="text">
+     <string>Введите ваше ФИО</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_4">
+    <property name="geometry">
+     <rect>
+      <x>40</x>
+      <y>470</y>
+      <width>141</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Source Code Pro Semibold</family>
+      <pointsize>10</pointsize>
+      <weight>75</weight>
+      <italic>true</italic>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="text">
+     <string>Введите ваш СНИЛС</string>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="patient_name">
+    <property name="geometry">
+     <rect>
+      <x>40</x>
+      <y>420</y>
+      <width>391</width>
+      <height>20</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="patient_snils">
+    <property name="geometry">
+     <rect>
+      <x>40</x>
+      <y>490</y>
+      <width>391</width>
+      <height>20</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="btn_accept">
+    <property name="geometry">
+     <rect>
+      <x>170</x>
+      <y>530</y>
+      <width>141</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Подтвердить запись</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="accept_message">
+    <property name="geometry">
+     <rect>
+      <x>150</x>
+      <y>570</y>
+      <width>191</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Ваша запись еще не подтверждена</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="pbn_find">
+    <property name="geometry">
+     <rect>
+      <x>170</x>
+      <y>240</y>
+      <width>151</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Найти свободное время</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="ptn_free_1">
+    <property name="geometry">
+     <rect>
+      <x>40</x>
+      <y>330</y>
+      <width>75</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>PushButton</string>
+    </property>
+    <attribute name="buttonGroup">
+     <string notr="true">btn_Group</string>
+    </attribute>
+   </widget>
+   <widget class="QPushButton" name="ptn_free_2">
+    <property name="geometry">
+     <rect>
+      <x>120</x>
+      <y>330</y>
+      <width>75</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>PushButton</string>
+    </property>
+    <attribute name="buttonGroup">
+     <string notr="true">btn_Group</string>
+    </attribute>
+   </widget>
+   <widget class="QPushButton" name="ptn_free_3">
+    <property name="geometry">
+     <rect>
+      <x>200</x>
+      <y>330</y>
+      <width>75</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>PushButton</string>
+    </property>
+    <attribute name="buttonGroup">
+     <string notr="true">btn_Group</string>
+    </attribute>
+   </widget>
+   <widget class="QPushButton" name="ptn_free_4">
+    <property name="geometry">
+     <rect>
+      <x>280</x>
+      <y>330</y>
+      <width>75</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>PushButton</string>
+    </property>
+    <attribute name="buttonGroup">
+     <string notr="true">btn_Group</string>
+    </attribute>
+   </widget>
+   <widget class="QPushButton" name="ptn_free_5">
+    <property name="geometry">
+     <rect>
+      <x>360</x>
+      <y>330</y>
+      <width>75</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>PushButton</string>
+    </property>
+    <attribute name="buttonGroup">
+     <string notr="true">btn_Group</string>
+    </attribute>
+   </widget>
+   <widget class="QPushButton" name="ptn_free_6">
+    <property name="geometry">
+     <rect>
+      <x>40</x>
+      <y>360</y>
+      <width>75</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>PushButton</string>
+    </property>
+    <attribute name="buttonGroup">
+     <string notr="true">btn_Group</string>
+    </attribute>
+   </widget>
+   <widget class="QPushButton" name="ptn_free_7">
+    <property name="geometry">
+     <rect>
+      <x>120</x>
+      <y>360</y>
+      <width>75</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>PushButton</string>
+    </property>
+    <attribute name="buttonGroup">
+     <string notr="true">btn_Group</string>
+    </attribute>
+   </widget>
+   <widget class="QPushButton" name="ptn_free_8">
+    <property name="geometry">
+     <rect>
+      <x>200</x>
+      <y>360</y>
+      <width>75</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>PushButton</string>
+    </property>
+    <attribute name="buttonGroup">
+     <string notr="true">btn_Group</string>
+    </attribute>
+   </widget>
+   <widget class="QPushButton" name="ptn_free_9">
+    <property name="geometry">
+     <rect>
+      <x>280</x>
+      <y>360</y>
+      <width>75</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>PushButton</string>
+    </property>
+    <attribute name="buttonGroup">
+     <string notr="true">btn_Group</string>
+    </attribute>
+   </widget>
+   <widget class="QPushButton" name="ptn_free_10">
+    <property name="geometry">
+     <rect>
+      <x>360</x>
+      <y>360</y>
+      <width>75</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>PushButton</string>
+    </property>
+    <attribute name="buttonGroup">
+     <string notr="true">btn_Group</string>
+    </attribute>
+   </widget>
+   <widget class="QPushButton" name="give_info_about_record">
+    <property name="geometry">
+     <rect>
+      <x>180</x>
+      <y>600</y>
+      <width>121</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Информация о записи</string>
+    </property>
+   </widget>
+   <zorder>label</zorder>
+   <zorder>calendar</zorder>
+   <zorder>label_2</zorder>
+   <zorder>label_3</zorder>
+   <zorder>label_4</zorder>
+   <zorder>patient_name</zorder>
+   <zorder>patient_snils</zorder>
+   <zorder>btn_accept</zorder>
+   <zorder>accept_message</zorder>
+   <zorder>pbn_find</zorder>
+   <zorder>ptn_free_3</zorder>
+   <zorder>ptn_free_1</zorder>
+   <zorder>ptn_free_2</zorder>
+   <zorder>ptn_free_4</zorder>
+   <zorder>ptn_free_5</zorder>
+   <zorder>ptn_free_6</zorder>
+   <zorder>ptn_free_7</zorder>
+   <zorder>ptn_free_8</zorder>
+   <zorder>ptn_free_9</zorder>
+   <zorder>ptn_free_10</zorder>
+   <zorder>give_info_about_record</zorder>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>480</width>
+     <height>21</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+ </widget>
+ <resources/>
+ <connections/>
+ <buttongroups>
+  <buttongroup name="btn_Group"/>
+ </buttongroups>
+</ui>
