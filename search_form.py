@@ -1,20 +1,21 @@
 import sys
 import sqlite3
-from PyQt5 import uic
-from PyQt5.QtGui import QPixmap, QFont
-from PyQt5.QtWidgets import QApplication, QLabel, QMainWindow, QPushButton, QPushButton, QInputDialog, QWidget
+import csv
+from PyQt5 import uic, QtCore
+from PyQt5.QtGui import QPixmap, QFont, QPainter, QColor, QTextCharFormat
+from PyQt5.QtWidgets import QApplication, QLabel, QLineEdit, QMainWindow,  QTableWidgetItem, QPushButton, QInputDialog, QWidget
 
 
 SCREEN_SIZE = [400, 400]
 
-class e_registr(QMainWindow):
-    def __init__(self):
+class Record_form(QMainWindow):
+    def __init__(self, *args):
         super().__init__()
-        self.initUI()
+        self.initUI(args)
         self.con = sqlite3.connect('m_base.db')
 
 
-    def initUI(self):
+    def initUI(self, args):
         self.setGeometry(100, 100, 550, 400)
         self.setWindowTitle('Электронная регистратура')
 
@@ -84,18 +85,32 @@ class e_registr(QMainWindow):
         for btn in self.btn_Group.buttons():
             btn.hide()
 
+        self.calendar.setGridVisible(True)
+
+        free_date_request = """SELECT distinct date_work FROM reception_date_time
+                                        WHERE doctors_id = (SELECT doctors_id FROM doctors WHERE doctors_name LIKE ?) AND free = 1"""
+        find_free_date = self.db_request(free_date_request, self.name)
+        if find_free_date:
+            format = QTextCharFormat()
+            format.setBackground(QtCore.Qt.green)
+            for date in find_free_date:
+                d, m, y = map(int, date.split('.'))
+                self.calendar.setDateTextFormat(QtCore.QDate(y, m, d), format)
+
         self.pbn_find.clicked.connect(self.find_free_time)
 
 
     def find_free_time(self):
         self.date = self.calendar.selectedDate().toString('dd.MM.yyyy')
         if self.date:
-            free_time_request = """SELECT time FROM reception_date_time 
-                            WHERE doctors_id == (SELECT doctors_id FROM doctors WHERE doctors_name LIKE ?) AND 
+            free_time_request = """SELECT time FROM reception_date_time
+                            WHERE doctors_id == (SELECT doctors_id FROM doctors WHERE doctors_name LIKE ?) AND
                             date_work == ? and free == 1"""
             find_free_time = self.db_request(free_time_request, self.name, self.date)
 
             if find_free_time:
+                for btn in self.btn_Group.buttons():
+                    btn.hide()
                 self.label_2.setText('Выберите время')
                 self.label_2.setFont(QFont("Source Serif Pro Semibold", 10))
                 self.label_2.setStyleSheet("color: #000000")
@@ -119,7 +134,6 @@ class e_registr(QMainWindow):
             if button is self.btn_Group.button(id):
                 button.setStyleSheet("background-color: #00CED1")
                 self.choose_time = button.text()
-
 
 
     def accept(self):
@@ -193,8 +207,8 @@ class e_registr(QMainWindow):
                 self.search_fields[1].resize(self.search_fields[1].sizeHint())
 
         elif self.sender().text() == 'Специальность':
-            speciality_request = """SELECT DISTINCT direction FROM doctors 
-            WHERE hospitals_id == (SELECT hospitals_id FROM hospitals WHERE hospitals_name LIKE ?)"""
+            speciality_request = """SELECT DISTINCT direction FROM doctors
+            WHERE hospitals_id = (SELECT hospitals_id FROM hospitals WHERE hospitals_name LIKE ?)"""
 
             self.direction, okBtnPressed = QInputDialog.getItem(self, "Выбор специальности",
                                                    "Выберите специальность?",
@@ -205,7 +219,7 @@ class e_registr(QMainWindow):
                 self.search_fields[2].setStyleSheet("color: #000000")
                 self.search_fields[2].resize(self.search_fields[2].sizeHint())
         else:
-            name_request = """SELECT doctors_name FROM doctors WHERE direction LIKE ? AND hospitals_id == 
+            name_request = """SELECT doctors_name FROM doctors WHERE direction LIKE ? AND hospitals_id ==
             (SELECT hospitals_id FROM hospitals WHERE hospitals_name LIKE ?)"""
 
             self.name, okBtnPressed = QInputDialog.getItem(self, "Выбор врача",
@@ -231,9 +245,100 @@ class Info_record_form(QWidget):
         self.lbl.move(10, 100)
         self.lbl.setText(args[-1])
 
+class Welcome_form(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.initUI()
+
+    def initUI(self):
+        self.setGeometry(400, 300, 500, 300)
+        self.setWindowTitle('Электронная регистратура Воронежской области')
+
+        self.btn_appointment_with_a_doctor = QPushButton('Записаться к врачу', self)
+        self.btn_appointment_with_a_doctor.move(50, 140)
+        self.btn_appointment_with_a_doctor.resize(180, 30)
+        self.btn_appointment_with_a_doctor.clicked.connect(self.open_recording_form)
+
+        self.btn_get_tests = QPushButton('Получить результаты анализов', self)
+        self.btn_get_tests.move(260, 140)
+        self.btn_get_tests.resize(180, 30)
+        self.btn_get_tests.clicked.connect(self.get_tests)
+
+    def get_tests(self):
+        self.tests_form = Tests_form(self)
+        self.tests_form.show()
+        self.hide()
+
+    def open_recording_form(self):
+        self.record_form = Record_form(self)
+        self.record_form.show()
+        self.hide()
+
+class Tests_form(QMainWindow):
+    def __init__(self, *args):
+        super().__init__()
+        self.initUI(args)
+
+    def initUI(self, args):
+        self.setGeometry(400, 300, 500, 300)
+        self.setWindowTitle('Результаты анализов')
+
+        self.btn_get_test = QPushButton('Получить результаты', self)
+        self.btn_get_test.move(170, 200)
+        self.btn_get_test.resize(130, 30)
+
+        self.patient_info = [QLineEdit(self) for _ in range(2)]
+        for i in range(2):
+            self.patient_info[i].move(250, 50 + 70 * i)
+
+        self.info_lbl = [QLabel(self) for _ in range(2)]
+        self.info_lbl[0].setText('Введите номер на чеке')
+        self.info_lbl[1].setText('Введите СНИЛС')
+        for i in range(2):
+            self.info_lbl[i].move(80, 55 + 70 * i)
+            self.info_lbl[i].setFont(QFont("Source Serif Pro Semibold", 10))
+            self.info_lbl[i].resize(self.info_lbl[i].sizeHint())
+        self.btn_get_test.clicked.connect(self.get_test)
+
+    def fix_nulls(s):
+        for line in s:
+            yield line.replace('\0', ' ')
+
+    def get_test(self):
+        uic.loadUi('result_form.ui', self)
+        num_check, snils = self.patient_info[0].text(), self.patient_info[1].text()
+
+        con = sqlite3.connect('m_base.db')
+        cur = con.cursor()
+        try:
+            num_file_request = """SELECT number_file FROM tests
+                               WHERE patient_snils = ? AND number = ?"""
+            num_file = cur.execute(num_file_request, (snils, num_check)).fetchone()
+
+            for el in num_file:
+                with open(f'{el}.csv') as file_with_result_tests:
+                    reader = csv.reader(file_with_result_tests, delimiter=';', quotechar='"')
+                    title = next(reader)
+                    self.tableWidget.setColumnCount(len(title))
+                    self.tableWidget.setHorizontalHeaderLabels(title)
+                    self.tableWidget.setRowCount(0)
+                    for i, row in enumerate(reader):
+                        self.tableWidget.setRowCount(self.tableWidget.rowCount() + 1)
+                        for j, elem in enumerate(row):
+                            self.tableWidget.setItem(i, j, QTableWidgetItem(str(elem)))
+                self.tableWidget.resizeColumnsToContents()
+        except FileExistsError as ex:
+            self.not_found_lbl = QLabel(self)
+            self.not_found_lbl.setText('Извините, результаты обрабатываются, обратитесь к системе позже')
+            self.not_found_lbl.move(50, 200)
+            self.not_found_lbl.setFont(QFont("Source Serif Pro Semibold", 10))
+            self.not_found_lbl.setStyleSheet("color: #FF0000")
+            self.not_found_lbl.resize(self.not_found_lbl.sizeHint())
+            print(ex)
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    ex = e_registr()
+    ex = Welcome_form()
     ex.show()
     sys.exit(app.exec())
