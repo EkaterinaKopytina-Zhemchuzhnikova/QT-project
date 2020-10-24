@@ -255,13 +255,24 @@ class Info_record_form(QWidget):
 class Help(QWidget):
     def __init__(self):
         super(Help, self).__init__()
-        self.setWindowTitle('Справка')
+        self.setWindowTitle('О программе')
         self.setLayout(QVBoxLayout(self))
         self.info = QLabel(self)
-        with open('help.txt', 'r') as f:
+        with open('info.txt', 'r') as f:
             read_data = f.read()
             self.info.setText(read_data)
         self.layout().addWidget(self.info)
+
+class Contact(QWidget):
+    def __init__(self):
+        super(Contact, self).__init__()
+        self.setWindowTitle('Контакты')
+        self.setLayout(QVBoxLayout(self))
+        self.contact = QLabel(self)
+        self.contact.setText('Контактный номер Министерства здравоохранения:\n212-61-79\n'
+                             'Адрес:\n394006 г.Воронеж, ул. Красноармейская д. 52д\n'
+                             'Время работы:\nпн-чт: 9.00-18.00,\nпт: 9.00-16.45 ')
+        self.layout().addWidget(self.contact)
 
 class Welcome_form(QMainWindow):
     def __init__(self):
@@ -273,10 +284,16 @@ class Welcome_form(QMainWindow):
         self.setWindowTitle('Электронная регистратура Воронежской области')
 
         self.about_action = QAction(self)
-        self.about_action.setText('Справка')
+        self.about_action.setText('О программе')
         self.about_action.triggered.connect(self.about)
         self.menuBar().addAction(self.about_action)
         self.help = Help()
+
+        self.contact_action = QAction(self)
+        self.contact_action.setText('Контакты')
+        self.contact_action.triggered.connect(self.contact)
+        self.menuBar().addAction(self.contact_action)
+        self.contact = Contact()
 
         self.btn_appointment_with_a_doctor = QPushButton('Записаться к врачу', self)
         self.btn_appointment_with_a_doctor.move(50, 140)
@@ -290,6 +307,9 @@ class Welcome_form(QMainWindow):
 
     def about(self):
         self.help.show()
+
+    def contact(self):
+        self.contact.show()
 
     def get_tests(self):
         self.tests_form = Tests_form(self)
