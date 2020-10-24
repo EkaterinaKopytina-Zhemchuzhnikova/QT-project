@@ -2,8 +2,8 @@ import sys
 import sqlite3
 import csv
 from PyQt5 import uic, QtCore
-from PyQt5.QtGui import QPixmap, QFont, QPainter, QColor, QTextCharFormat
-from PyQt5.QtWidgets import QApplication, QLabel, QLineEdit, QMainWindow,  QTableWidgetItem, QPushButton, QInputDialog, QWidget
+from PyQt5.QtGui import QPixmap, QFont, QTextCharFormat
+from PyQt5.QtWidgets import QApplication, QVBoxLayout, QAction, QLabel, QLineEdit, QMainWindow,  QTableWidgetItem, QPushButton, QInputDialog, QWidget
 
 
 SCREEN_SIZE = [400, 400]
@@ -137,25 +137,32 @@ class Record_form(QMainWindow):
 
 
     def accept(self):
-        if (not self.patient_name.text() or len(self.patient_name.text().split()) <= 2):
+        self.user_input_snils = ''.join(self.patient_snils.text().split())
+        self.user_input_name = self.patient_name.text()
+        if (not self.user_input_name or len(self.user_input_name.split()) != 3) and (not self.user_input_snils.isdigit() or len(self.user_input_snils) != 11):
+            self.patient_name.setText('Ввод некорректен. Введите ФИО через пробел еще раз')
+            self.patient_snils.setText('Ввод некорректен. Введите СНИЛС еще раз')
+            snils, name = False, False
+        elif not self.user_input_name or len(self.user_input_name.split()) != 3:
             self.patient_name.setText('Ввод некорректен. Введите ФИО через пробел еще раз')
             name = False
-        else:
-            try:
-                for el in self.cur.execute("SELECT patient_snils, patient_name FROM patients_attached_to_clinics WHERE patient_name LIKE ?", (self.patient_name.text(),)).fetchall():
-                    self.patient_snils_in_db, self.patient_name_in_db = el
-                name = True
-            except Exception:
-                self.patient_name.setText('Запись невозможна. Вам следует прикрепиться к поликлинике по месту жительства')
-                name = False
-        self.user_input_snils = ''.join(self.patient_snils.text().split())
-        if not self.user_input_snils.isdigit() or len(self.user_input_snils) != 11 or \
-                self.patient_snils_in_db != int(self.user_input_snils):
+        elif not self.user_input_snils.isdigit() or len(self.user_input_snils) != 11:
             self.patient_snils.setText('Ввод некорректен. Введите СНИЛС еще раз')
             snils = False
         else:
-            snils = True
-
+            result = self.cur.execute("SELECT patient_snils, patient_name FROM patients_attached_to_clinics WHERE patient_name LIKE ?", (self.user_input_name,)).fetchall()
+            if result:
+                for el in result:
+                    self.patient_snils_in_db, self.patient_name_in_db = el
+                    name = True
+            else:
+                self.patient_name.setText('Запись невозможна. Прикрепитесь к поликлинике по месту жительства')
+                name = False
+            if self.patient_snils_in_db != int(self.user_input_snils):
+                self.patient_snils.setText('Ввод некорректен. Введите СНИЛС еще раз')
+                snils = False
+            else:
+                snils = True
         if name and snils and self.choose_time:
 
             doctor_id = self.db_request("SELECT doctors_id FROM doctors WHERE doctors_name LIKE ?", self.name)
@@ -245,6 +252,17 @@ class Info_record_form(QWidget):
         self.lbl.move(10, 100)
         self.lbl.setText(args[-1])
 
+class Help(QWidget):
+    def __init__(self):
+        super(Help, self).__init__()
+        self.setWindowTitle('Справка')
+        self.setLayout(QVBoxLayout(self))
+        self.info = QLabel(self)
+        with open('help.txt', 'r') as f:
+            read_data = f.read()
+            self.info.setText(read_data)
+        self.layout().addWidget(self.info)
+
 class Welcome_form(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -253,6 +271,12 @@ class Welcome_form(QMainWindow):
     def initUI(self):
         self.setGeometry(400, 300, 500, 300)
         self.setWindowTitle('Электронная регистратура Воронежской области')
+
+        self.about_action = QAction(self)
+        self.about_action.setText('Справка')
+        self.about_action.triggered.connect(self.about)
+        self.menuBar().addAction(self.about_action)
+        self.help = Help()
 
         self.btn_appointment_with_a_doctor = QPushButton('Записаться к врачу', self)
         self.btn_appointment_with_a_doctor.move(50, 140)
@@ -264,6 +288,9 @@ class Welcome_form(QMainWindow):
         self.btn_get_tests.resize(180, 30)
         self.btn_get_tests.clicked.connect(self.get_tests)
 
+    def about(self):
+        self.help.show()
+
     def get_tests(self):
         self.tests_form = Tests_form(self)
         self.tests_form.show()
@@ -274,14 +301,22 @@ class Welcome_form(QMainWindow):
         self.record_form.show()
         self.hide()
 
+    def keyPressEvent(self, event):
+        if event.key() == QtCore.Qt.Key_Z:
+            self.open_recording_form()
+        elif event.key() == QtCore.Qt.Key_R:
+            self.get_tests()
+
 class Tests_form(QMainWindow):
     def __init__(self, *args):
         super().__init__()
-        self.initUI(args)
 
-    def initUI(self, args):
         self.setGeometry(400, 300, 500, 300)
         self.setWindowTitle('Результаты анализов')
+
+        self.btn_back = QPushButton(u'\u27F5', self)
+        self.btn_back.move(10, 5)
+        self.btn_back.clicked.connect(self.back)
 
         self.btn_get_test = QPushButton('Получить результаты', self)
         self.btn_get_test.move(170, 200)
@@ -300,42 +335,64 @@ class Tests_form(QMainWindow):
             self.info_lbl[i].resize(self.info_lbl[i].sizeHint())
         self.btn_get_test.clicked.connect(self.get_test)
 
-    def fix_nulls(s):
-        for line in s:
-            yield line.replace('\0', ' ')
+    def keyPressEvent(self, event):
+        if event.key() == QtCore.Qt.Key_Backspace:
+            self.back()
 
     def get_test(self):
-        uic.loadUi('result_form.ui', self)
-        num_check, snils = self.patient_info[0].text(), self.patient_info[1].text()
-
-        con = sqlite3.connect('m_base.db')
-        cur = con.cursor()
-        try:
-            num_file_request = """SELECT number_file FROM tests
+        num_check, snils = ''.join(self.patient_info[0].text().split()), ''.join(self.patient_info[1].text().split())
+        if (not num_check.isdigit() or len(num_check) != 5) and (not snils.isdigit() or len(snils) != 11):
+            self.patient_info[0].setStyleSheet("background-color: #FF0000")
+            self.patient_info[0].clear()
+            self.patient_info[1].setStyleSheet("background-color: #FF0000")
+            self.patient_info[1].clear()
+        elif not snils.isdigit() or len(snils) != 11:
+            self.patient_info[0].setStyleSheet("background-color: #FFFFFF")
+            self.patient_info[1].setStyleSheet("background-color: #FF0000")
+            self.patient_info[1].clear()
+        elif not num_check.isdigit() or len(num_check) != 5:
+            self.patient_info[1].setStyleSheet("background-color: #FFFFFF")
+            self.patient_info[0].setStyleSheet("background-color: #FF0000")
+            self.patient_info[0].clear()
+        else:
+            con = sqlite3.connect('m_base.db')
+            cur = con.cursor()
+            try:
+                num_file_request = """SELECT number_file FROM tests
                                WHERE patient_snils = ? AND number = ?"""
-            num_file = cur.execute(num_file_request, (snils, num_check)).fetchone()
+                num_file = cur.execute(num_file_request, (snils, num_check)).fetchone()
+                if num_file:
+                    uic.loadUi('result_form.ui', self)
+                    for el in num_file:
+                        with open(f'{el}.csv') as file_with_result_tests:
+                            reader = csv.reader(file_with_result_tests, delimiter=';', quotechar='"')
+                            title = next(reader)
+                            self.tableWidget.setColumnCount(len(title))
+                            self.tableWidget.setHorizontalHeaderLabels(title)
+                            self.tableWidget.setRowCount(0)
+                            for i, row in enumerate(reader):
+                                self.tableWidget.setRowCount(self.tableWidget.rowCount() + 1)
+                                for j, elem in enumerate(row):
+                                    self.tableWidget.setItem(i, j, QTableWidgetItem(str(elem)))
+                        self.tableWidget.resizeColumnsToContents()
+                else:
+                    self.patient_info[0].setStyleSheet("background-color: #FF0000")
+                    self.patient_info[0].clear()
+                    self.patient_info[1].setStyleSheet("background-color: #FF0000")
+                    self.patient_info[1].clear()
 
-            for el in num_file:
-                with open(f'{el}.csv') as file_with_result_tests:
-                    reader = csv.reader(file_with_result_tests, delimiter=';', quotechar='"')
-                    title = next(reader)
-                    self.tableWidget.setColumnCount(len(title))
-                    self.tableWidget.setHorizontalHeaderLabels(title)
-                    self.tableWidget.setRowCount(0)
-                    for i, row in enumerate(reader):
-                        self.tableWidget.setRowCount(self.tableWidget.rowCount() + 1)
-                        for j, elem in enumerate(row):
-                            self.tableWidget.setItem(i, j, QTableWidgetItem(str(elem)))
-                self.tableWidget.resizeColumnsToContents()
-        except FileExistsError as ex:
-            self.not_found_lbl = QLabel(self)
-            self.not_found_lbl.setText('Извините, результаты обрабатываются, обратитесь к системе позже')
-            self.not_found_lbl.move(50, 200)
-            self.not_found_lbl.setFont(QFont("Source Serif Pro Semibold", 10))
-            self.not_found_lbl.setStyleSheet("color: #FF0000")
-            self.not_found_lbl.resize(self.not_found_lbl.sizeHint())
-            print(ex)
+            except FileExistsError:
+                self.not_found_lbl = QLabel(self)
+                self.not_found_lbl.setText('Извините, результаты обрабатываются, обратитесь к системе позже')
+                self.not_found_lbl.move(50, 200)
+                self.not_found_lbl.setFont(QFont("Source Serif Pro Semibold", 10))
+                self.not_found_lbl.setStyleSheet("color: #FF0000")
+                self.not_found_lbl.resize(self.not_found_lbl.sizeHint())
 
+    def back(self):
+        self.welcome_form = Welcome_form()
+        self.welcome_form.show()
+        self.hide()
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
