@@ -86,14 +86,20 @@ class Record_form(QMainWindow):
             btn.hide()
 
         self.calendar.setGridVisible(True)
-
         free_date_request = """SELECT distinct date_work FROM reception_date_time
-                                        WHERE doctors_id = (SELECT doctors_id FROM doctors WHERE doctors_name LIKE ?) AND free = 1"""
+                                        WHERE doctors_id = (SELECT doctors_id FROM doctors WHERE doctors_name LIKE ?) 
+                                        AND free = 1"""
         find_free_date = self.db_request(free_date_request, self.name)
-        if find_free_date:
+        free_date = []
+        for el in find_free_date:
+            d, m, y = map(int, el.split('.'))
+            if dt.date(y, m, d) >= dt.date.today():
+                free_date.append(el)
+
+        if free_date:
             format = QTextCharFormat()
             format.setBackground(QtCore.Qt.green)
-            for date in find_free_date:
+            for date in free_date:
                 d, m, y = map(int, date.split('.'))
                 self.calendar.setDateTextFormat(QtCore.QDate(y, m, d), format)
 
@@ -436,6 +442,7 @@ class Cancel_record(QMainWindow):
         self.edit_cancel_snils.move(300, 70)
 
         self.btn_back = QPushButton(u'\u27F5', self)
+        self.btn_back.setFocus()
         self.btn_back.move(10, 5)
         self.btn_back.clicked.connect(self.back)
 
@@ -460,7 +467,7 @@ class Cancel_record(QMainWindow):
         self.lbl_info_cancel = QLabel(self)
         self.lbl_info_cancel.setText('Запись еще не отменена')
         self.lbl_info_cancel.setStyleSheet("color: #8B0000")
-        self.lbl_info_cancel.move(215, 350)
+        self.lbl_info_cancel.move(210, 350)
         self.lbl_info_cancel.adjustSize()
 
 
@@ -478,7 +485,12 @@ class Cancel_record(QMainWindow):
             self.record_widget.addItems(record_list)
             self.record_widget.adjustSize()
         else:
+            self.lbl_info_cancel.setFont(QFont("Source Serif Pro Semibold", 12))
             self.edit_cancel_snils.setStyleSheet("background-color: #FF0000")
+
+    def keyPressEvent(self, event):
+        if event.key() == QtCore.Qt.Key_Backspace:
+            self.back()
 
     def back(self):
         self.welcome_form = Welcome_form()
@@ -499,7 +511,7 @@ class Cancel_record(QMainWindow):
         self.con.commit()
         self.lbl_info_cancel.setText('Запись отменена!')
         self.lbl_info_cancel.setStyleSheet("color: #32CD32")
-
+        
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
