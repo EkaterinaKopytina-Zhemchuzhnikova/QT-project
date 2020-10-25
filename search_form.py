@@ -3,8 +3,8 @@ import sqlite3
 import csv
 from PyQt5 import uic, QtCore
 from PyQt5.QtGui import QPixmap, QFont, QTextCharFormat
-from PyQt5.QtWidgets import QApplication, QVBoxLayout, QAction, QLabel, QLineEdit, QMainWindow,  QTableWidgetItem, QPushButton, QInputDialog, QWidget
-
+from PyQt5.QtWidgets import QApplication, QVBoxLayout, QComboBox, QAction, QLabel, QLineEdit, QMainWindow,  QTableWidgetItem, QPushButton, QInputDialog, QWidget
+import datetime as dt
 
 SCREEN_SIZE = [400, 400]
 
@@ -164,11 +164,9 @@ class Record_form(QMainWindow):
             else:
                 snils = True
         if name and snils and self.choose_time:
-
             doctor_id = self.db_request("SELECT doctors_id FROM doctors WHERE doctors_name LIKE ?", self.name)
-
-            self.cur.execute("INSERT INTO registered_patients (patient_name, date, time, doctors_id) VALUES(?, ?, ?, ?)",
-                        (self.patient_name.text(), self.date, self.choose_time, *doctor_id))
+            self.cur.execute("INSERT INTO registered_patients (snils, patient_name, date, time, doctors_id) VALUES(?, ?, ?, ?, ?)",
+                        (int(self.user_input_snils), self.patient_name.text(), self.date, self.choose_time, *doctor_id))
 
             change_status_time = "UPDATE reception_date_time SET free = 0 " \
                                  "WHERE doctors_id == (SELECT doctors_id FROM doctors WHERE doctors_name LIKE ?) " \
@@ -300,6 +298,11 @@ class Welcome_form(QMainWindow):
         self.btn_appointment_with_a_doctor.resize(180, 30)
         self.btn_appointment_with_a_doctor.clicked.connect(self.open_recording_form)
 
+        self.btn_cancel_recording = QPushButton('Отменить запись', self)
+        self.btn_cancel_recording.move(50, 185)
+        self.btn_cancel_recording.resize(180, 30)
+        self.btn_cancel_recording.clicked.connect(self.cancel_recording)
+
         self.btn_get_tests = QPushButton('Получить результаты анализов', self)
         self.btn_get_tests.move(260, 140)
         self.btn_get_tests.resize(180, 30)
@@ -326,6 +329,11 @@ class Welcome_form(QMainWindow):
             self.open_recording_form()
         elif event.key() == QtCore.Qt.Key_R:
             self.get_tests()
+
+    def cancel_recording(self):
+        self.cancel_rec = Cancel_record(self)
+        self.cancel_rec.show()
+        self.hide()
 
 class Tests_form(QMainWindow):
     def __init__(self, *args):
@@ -413,6 +421,85 @@ class Tests_form(QMainWindow):
         self.welcome_form = Welcome_form()
         self.welcome_form.show()
         self.hide()
+
+class Cancel_record(QMainWindow):
+    def __init__(self, *args):
+        super().__init__()
+        self.initUI(args)
+        self.con = sqlite3.connect('m_base.db')
+
+    def initUI(self, args):
+        self.setGeometry(100, 100, 550, 400)
+        self.setWindowTitle('Отмена записи')
+
+        self.edit_cancel_snils = QLineEdit(self)
+        self.edit_cancel_snils.move(300, 70)
+
+        self.btn_back = QPushButton(u'\u27F5', self)
+        self.btn_back.move(10, 5)
+        self.btn_back.clicked.connect(self.back)
+
+        self.lbl_cancel_snils = QLabel(self)
+        self.lbl_cancel_snils.setText('Введите СНИЛС')
+        self.lbl_cancel_snils.move(150, 75)
+        self.lbl_cancel_snils.adjustSize()
+
+        self.btn_get_rec = QPushButton('Получить доступные записи', self)
+        self.btn_get_rec.move(200, 150)
+        self.btn_get_rec.adjustSize()
+        self.btn_get_rec.clicked.connect(self.get_info)
+
+        self.record_widget = QComboBox(self)
+        self.record_widget.move(200, 220)
+
+        self.btn_ok_cancel = QPushButton('Подтвердить отмену', self)
+        self.btn_ok_cancel.move(215, 300)
+        self.btn_ok_cancel.adjustSize()
+        self.btn_ok_cancel.clicked.connect(self.ok_cancel)
+
+        self.lbl_info_cancel = QLabel(self)
+        self.lbl_info_cancel.setText('Запись еще не отменена')
+        self.lbl_info_cancel.setStyleSheet("color: #8B0000")
+        self.lbl_info_cancel.move(215, 350)
+        self.lbl_info_cancel.adjustSize()
+
+
+    def get_info(self):
+        if self.edit_cancel_snils.text():
+            self.cur = self.con.cursor()
+            m_list = self.cur.execute("""SELECT date, time, doctors_name FROM registered_patients, doctors
+                          WHERE registered_patients.snils = ?  AND registered_patients.doctors_id = doctors.doctors_id""", (int(self.edit_cancel_snils.text()), )).fetchall()
+            record_list = []
+            for el in m_list:
+                d, m, y = map(int, el[0].split('.'))
+                if dt.date(y, m, d) > dt.date.today():
+                    data, time, doctor = el
+                    record_list.append(f'{data} {time} {doctor}')
+            self.record_widget.addItems(record_list)
+            self.record_widget.adjustSize()
+        else:
+            self.edit_cancel_snils.setStyleSheet("background-color: #FF0000")
+
+    def back(self):
+        self.welcome_form = Welcome_form()
+        self.welcome_form.show()
+        self.hide()
+
+    def ok_cancel(self):
+        choose_for_cancel = self.record_widget.currentText()
+        date, time, *doctor = choose_for_cancel.split()
+        id_record = self.cur.execute("""SELECT id FROM registered_patients, doctors
+                                  WHERE registered_patients.snils = ? AND registered_patients.date = ? AND registered_patients.time = ? AND registered_patients.doctors_id = doctors.doctors_id""",
+                                  (int(self.edit_cancel_snils.text()), date, time)).fetchone()
+
+        self.cur.execute("DELETE FROM registered_patients WHERE id = ?", (id_record[0],))
+        self.con.commit()
+        self.cur.execute("UPDATE reception_date_time SET free = 1 WHERE date_work = ? AND time = ? AND doctors_id = "
+                             "(SELECT doctors_id FROM doctors WHERE doctors_name LIKE ?)", (date, time, ' '.join(doctor)))
+        self.con.commit()
+        self.lbl_info_cancel.setText('Запись отменена!')
+        self.lbl_info_cancel.setStyleSheet("color: #32CD32")
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
